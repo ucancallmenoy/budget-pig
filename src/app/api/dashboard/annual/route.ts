@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
 
     const year = parseInt(yearParam);
 
-    // Get all months for the year
     const months = await MonthModel.find({
       userId: user.id,
       year,
@@ -43,7 +42,6 @@ export async function GET(request: NextRequest) {
 
     const monthIds = months.map((m) => m._id.toString());
 
-    // Aggregate bills by month
     const billsByMonth = await BillModel.aggregate([
       { $match: { userId: user.id, monthId: { $in: monthIds } } },
       {
@@ -54,18 +52,40 @@ export async function GET(request: NextRequest) {
       },
     ]);
 
-    // Aggregate debts by month
-    const debtsByMonth = await DebtModel.aggregate([
-      { $match: { userId: user.id, monthId: { $in: monthIds } } },
-      {
-        $group: {
-          _id: '$monthId',
-          total: { $sum: '$minimumPayment' },
-        },
-      },
-    ]);
+    const allDebts = await DebtModel.find({
+      userId: user.id,
+    });
 
-    // Aggregate savings by month
+    const debtsByMonthMap = new Map<string, number>();
+    
+    months.forEach(month => {
+      const monthId = month._id.toString();
+      const currentYear = month.year;
+      const currentMonth = month.month;
+
+      const activeDebts = allDebts.filter(debt => {
+        const debtStartDate = new Date(debt.startYear, debt.startMonth - 1, 1);
+        const monthDate = new Date(currentYear, currentMonth - 1, 1);
+        
+        if (monthDate < debtStartDate) {
+          return false;
+        }
+        
+        if (debt.durationMonths) {
+          const debtEndDate = new Date(debt.startYear, debt.startMonth - 1 + debt.durationMonths, 0);
+          if (monthDate > debtEndDate) {
+            return false;
+          }
+        }
+        
+        const remainingBalance = debt.originalBalance - (debt.totalPaidAllTime || 0);
+        return remainingBalance > 0;
+      });
+
+      const totalMinPayment = activeDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
+      debtsByMonthMap.set(monthId, totalMinPayment);
+    });
+
     const savingsByMonth = await SavingModel.aggregate([
       { $match: { userId: user.id, monthId: { $in: monthIds } } },
       {
@@ -76,18 +96,13 @@ export async function GET(request: NextRequest) {
       },
     ]);
 
-    // Create lookup maps
     const billsMap = new Map(
       billsByMonth.map((b) => [b._id.toString(), b.total])
-    );
-    const debtsMap = new Map(
-      debtsByMonth.map((d) => [d._id.toString(), d.total])
     );
     const savingsMap = new Map(
       savingsByMonth.map((s) => [s._id.toString(), s.total])
     );
 
-    // Build monthly breakdown
     let totalIncome = 0;
     let totalExpenses = 0;
     let totalSaved = 0;
@@ -95,7 +110,7 @@ export async function GET(request: NextRequest) {
     const monthlyBreakdown = months.map((month) => {
       const monthIdStr = month._id.toString();
       const bills = billsMap.get(monthIdStr) || 0;
-      const debts = debtsMap.get(monthIdStr) || 0;
+      const debts = debtsByMonthMap.get(monthIdStr) || 0;
       const saved = savingsMap.get(monthIdStr) || 0;
       const expenses = bills + debts;
 

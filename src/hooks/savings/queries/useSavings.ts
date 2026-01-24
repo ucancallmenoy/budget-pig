@@ -16,7 +16,6 @@ export function useSavings(monthId: string | undefined) {
   });
 }
 
-// New hook for all savings (monthly + long-term)
 export function useAllSavings(userId?: string) {
   return useQuery({
     queryKey: ['savings', 'all', userId],

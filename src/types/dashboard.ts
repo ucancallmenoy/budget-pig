@@ -8,6 +8,8 @@ export interface MonthlyDashboard {
     paid: number;
     unpaid: number;
     count: number;
+    paidCount: number;
+    unpaidCount: number;
   };
   debts: {
     totalBalance: number;
@@ -18,11 +20,14 @@ export interface MonthlyDashboard {
   savings: {
     totalTarget: number;
     totalSaved: number;
+    monthlySaved: number;
     count: number;
+    monthlyCount: number;
   };
   summary: {
     totalExpenses: number;
     remainingIncome: number;
+    remainingAfterSavings: number;
     savingsRate: number;
   };
 }

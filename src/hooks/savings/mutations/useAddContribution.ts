@@ -14,11 +14,11 @@ export function useAddContribution() {
 
   return useMutation({
     mutationFn: async ({ savingId, amount, note }: AddContributionParams) => {
-      const response = await api.post(`/api/savings/${savingId}/contribute`, {
+      const response = await api.post<{ saving: any }>(`/api/savings/${savingId}/contribute`, {
         amount,
         note,
       });
-      return response;
+      return response.saving;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.savings(variables.monthId) });

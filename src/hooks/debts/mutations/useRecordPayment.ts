@@ -1,19 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/utils/api';
-import { Debt, UpdateDebtInput } from '@/types/debt';
+import { Debt, RecordDebtPaymentInput } from '@/types/debt';
 import { QUERY_KEYS } from '@/utils/constants';
 
-interface UpdateDebtParams {
-  debtId: string;
-  data: UpdateDebtInput;
-}
-
-export function useUpdateDebt() {
+export function useRecordPayment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ debtId, data }: UpdateDebtParams) => {
-      const response = await api.put<{ debt: Debt }>(`/api/debts/${debtId}`, data);
+    mutationFn: async (data: RecordDebtPaymentInput) => {
+      const response = await api.post<{ debt: Debt }>(`/api/debts/${data.debtId}/payment`, {
+        monthId: data.monthId,
+        amount: data.amount,
+      });
       return response.debt;
     },
     onSuccess: () => {

@@ -10,21 +10,43 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const monthId = searchParams.get('monthId');
+    const year = searchParams.get('year');
+    const month = searchParams.get('month');
 
-    if (!monthId) {
+    if (!year || !month) {
       return NextResponse.json(
-        { error: 'monthId is required' },
+        { error: 'year and month are required' },
         { status: 400 }
       );
     }
 
-    const debts = await DebtModel.find({
+    const currentYear = parseInt(year);
+    const currentMonth = parseInt(month);
+
+    const allDebts = await DebtModel.find({
       userId: user.id,
-      monthId,
     }).sort({ createdAt: -1 });
 
-    return NextResponse.json({ debts });
+    const activeDebts = allDebts.filter(debt => {
+      const debtStartDate = new Date(debt.startYear, debt.startMonth - 1, 1);
+      const currentDate = new Date(currentYear, currentMonth - 1, 1);
+      
+      if (currentDate < debtStartDate) {
+        return false;
+      }
+      
+      if (debt.durationMonths) {
+        const debtEndDate = new Date(debt.startYear, debt.startMonth - 1 + debt.durationMonths, 0);
+        if (currentDate > debtEndDate) {
+          return false;
+        }
+      }
+      
+      const remainingBalance = debt.originalBalance - (debt.totalPaidAllTime || 0);
+      return remainingBalance > 0;
+    });
+
+    return NextResponse.json({ debts: activeDebts });
   } catch (error) {
     console.error('Get debts error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {

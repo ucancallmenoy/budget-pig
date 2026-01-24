@@ -3,15 +3,18 @@ import { api } from '@/utils/api';
 import { Debt } from '@/types/debt';
 import { QUERY_KEYS } from '@/utils/constants';
 
-export function useDebts(monthId: string | undefined) {
+export function useDebts(year: number | undefined, month: number | undefined) {
   return useQuery({
-    queryKey: QUERY_KEYS.debts(monthId || ''),
+    queryKey: QUERY_KEYS.debts(year || 0, month || 0),
     queryFn: async () => {
       const response = await api.get<{ debts: Debt[] }>('/api/debts', {
-        params: { monthId: monthId! },
+        params: { 
+          year: year!.toString(),
+          month: month!.toString()
+        },
       });
       return response.debts;
     },
-    enabled: !!monthId,
+    enabled: !!year && !!month,
   });
 }

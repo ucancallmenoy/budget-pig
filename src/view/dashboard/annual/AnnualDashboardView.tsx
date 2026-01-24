@@ -48,7 +48,6 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
   return (
     <div className="min-h-screen bg-white p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
           <div>
             <h1 className="text-3xl font-semibold text-slate-800 mb-1">
@@ -66,9 +65,7 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
           </div>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Income */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-emerald-200 transition-colors">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
@@ -82,7 +79,6 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
             <p className="text-xs text-slate-400 mt-1">Yearly earnings</p>
           </div>
 
-          {/* Total Expenses */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-rose-200 transition-colors">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
@@ -96,7 +92,6 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
             <p className="text-xs text-slate-400 mt-1">Yearly spending</p>
           </div>
 
-          {/* Net Savings */}
           <div className={`bg-white rounded-xl border ${netSavings >= 0 ? 'border-teal-200 hover:border-teal-300' : 'border-amber-200 hover:border-amber-300'} p-5 transition-colors`}>
             <div className="flex items-start justify-between mb-3">
               <div className={`w-10 h-10 rounded-lg ${netSavings >= 0 ? 'bg-teal-50' : 'bg-amber-50'} flex items-center justify-center`}>
@@ -112,7 +107,6 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
             <p className="text-xs text-slate-400 mt-1">Income - Expenses</p>
           </div>
 
-          {/* Savings Rate */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-emerald-200 transition-colors">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
@@ -127,7 +121,6 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
           </div>
         </div>
 
-        {/* Monthly Bar Chart */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h3 className="text-base font-semibold text-slate-700 mb-6">Monthly Breakdown</h3>
           <div className="space-y-4">
@@ -174,7 +167,6 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
           </div>
         </div>
 
-        {/* Summary Table */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h3 className="text-base font-semibold text-slate-700 mb-6">Detailed Breakdown</h3>
           <div className="overflow-x-auto">

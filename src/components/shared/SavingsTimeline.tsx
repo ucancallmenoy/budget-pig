@@ -27,7 +27,6 @@ export function SavingsTimeline({ savings }: SavingsTimelineProps) {
 
   return (
     <div className="relative">
-      {/* Timeline line */}
       <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200" />
 
       <div className="space-y-6">
@@ -39,14 +38,12 @@ export function SavingsTimeline({ savings }: SavingsTimelineProps) {
 
           return (
             <div key={saving._id} className="relative flex items-start group">
-              {/* Timeline dot */}
               <div className={`absolute left-6 w-4 h-4 rounded-full border-4 ${
                 isComplete ? 'bg-green-500 border-green-200' :
                 isOverdue ? 'bg-red-500 border-red-200' :
                 'bg-blue-500 border-blue-200'
               }`} />
 
-              {/* Content */}
               <div className="ml-16 flex-1">
                 <div className="bg-white border-2 border-gray-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-2">
@@ -78,7 +75,6 @@ export function SavingsTimeline({ savings }: SavingsTimelineProps) {
                     </div>
                   </div>
 
-                  {/* Progress bar */}
                   <div className="mb-3">
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div

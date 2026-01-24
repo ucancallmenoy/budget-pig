@@ -15,11 +15,9 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // Try to extract year/month from the URL
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') || '';
   
-  // Match dashboard routes with year/month
   const dashboardMatch = pathname.match(/\/dashboard\/(\d{4})\/(\d{1,2})/);
   
   let year: number | undefined;
@@ -29,7 +27,6 @@ export default async function DashboardLayout({
     year = parseInt(dashboardMatch[1]);
     month = parseInt(dashboardMatch[2]);
   } else {
-    // Default to current month if not on a specific month route
     const current = getCurrentMonth();
     year = current.year;
     month = current.month;

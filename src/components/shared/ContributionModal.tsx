@@ -29,10 +29,14 @@ export function ContributionModal({
     const contributionAmount = parseFloat(amount);
     if (isNaN(contributionAmount) || contributionAmount <= 0) return;
 
-    await onSubmit(contributionAmount, note);
-    setAmount('');
-    setNote('');
-    onClose();
+    try {
+      await onSubmit(contributionAmount, note);
+      setAmount('');
+      setNote('');
+      onClose();
+    } catch (error) {
+      console.error('Error adding contribution:', error);
+    }
   };
 
   if (!saving) return null;
@@ -41,9 +45,9 @@ export function ContributionModal({
   const progress = (saving.savedAmount / saving.targetAmount) * 100;
 
   const quickAmounts = [
-    { label: '$25', value: 25 },
-    { label: '$50', value: 50 },
-    { label: '$100', value: 100 },
+    { label: formatCurrency(500), value: 500 },
+    { label: formatCurrency(1000), value: 1000 },
+    { label: formatCurrency(2000), value: 2000 },
     { label: 'All', value: remaining },
   ];
 
@@ -60,6 +64,10 @@ export function ContributionModal({
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Target</span>
               <span className="font-medium text-gray-800">{formatCurrency(saving.targetAmount)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Remaining</span>
+              <span className="font-medium text-emerald-600">{formatCurrency(remaining)}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
               <div
@@ -90,8 +98,8 @@ export function ContributionModal({
                 key={qa.label}
                 type="button"
                 onClick={() => setAmount(qa.value.toString())}
-                className="px-3 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100"
-                disabled={qa.value > remaining}
+                className="px-3 py-2 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={qa.value > remaining || isLoading}
               >
                 {qa.label}
               </button>
@@ -107,14 +115,14 @@ export function ContributionModal({
         />
 
         <div className="flex justify-end space-x-3 pt-4">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button
             variant="primary"
             onClick={handleSubmit}
             isLoading={isLoading}
-            disabled={!amount || parseFloat(amount) <= 0}
+            disabled={!amount || parseFloat(amount) <= 0 || isLoading}
           >
             Add Contribution
           </Button>

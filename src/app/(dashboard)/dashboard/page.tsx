@@ -11,7 +11,6 @@ export default async function DashboardPage() {
 
   await connectDB();
 
-  // Find or create current month
   let currentMonth = await MonthModel.findOne({
     userId: user.id,
     year,

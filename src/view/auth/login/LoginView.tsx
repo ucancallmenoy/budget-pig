@@ -42,14 +42,12 @@ export function LoginView() {
   return (
     <div className="flex items-center justify-center min-h-screen px-4 py-12">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <img src="/logo.png" alt="Budget Pig" className="w-20 h-20 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-slate-800">Welcome Back</h1>
           <p className="text-slate-500 mt-2">Sign in to your account</p>
         </div>
 
-        {/* Form Card */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (

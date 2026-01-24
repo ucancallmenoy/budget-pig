@@ -38,7 +38,7 @@ export const QUERY_KEYS = {
   months: ['months'] as const,
   month: (id: string) => ['months', id] as const,
   bills: (monthId: string) => ['bills', monthId] as const,
-  debts: (monthId: string) => ['debts', monthId] as const,
+  debts: (year: number, month: number) => ['debts', year, month] as const,
   savings: (monthId: string) => ['savings', monthId] as const,
   monthlyDashboard: (monthId: string) => ['dashboard', 'monthly', monthId] as const,
   annualDashboard: (year: number) => ['dashboard', 'annual', year] as const,

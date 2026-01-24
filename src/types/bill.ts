@@ -6,15 +6,25 @@ export type BillCategory =
   | 'loan'
   | 'other';
 
+export type BillRecurrence = 'monthly' | 'yearly' | 'one_time';
+
+export interface MonthlyBillPayment {
+  monthId: string;
+  amount: number;
+  paidAt: Date;
+}
+
 export interface Bill {
   _id: string;
   userId: string;
-  monthId: string;
+  monthId: string; // The month when the bill was created
   name: string;
   category: BillCategory;
   amount: number;
-  dueDate: Date;
-  isPaid: boolean;
+  dueDate: number; // Day of month (1-31)
+  isRecurring: boolean;
+  recurrence: BillRecurrence;
+  monthlyPayments: MonthlyBillPayment[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,14 +34,22 @@ export interface CreateBillInput {
   name: string;
   category: BillCategory;
   amount: number;
-  dueDate: Date;
-  isPaid?: boolean;
+  dueDate: number;
+  isRecurring?: boolean;
+  recurrence?: BillRecurrence;
 }
 
 export interface UpdateBillInput {
   name?: string;
   category?: BillCategory;
   amount?: number;
-  dueDate?: Date;
-  isPaid?: boolean;
+  dueDate?: number;
+  isRecurring?: boolean;
+  recurrence?: BillRecurrence;
+}
+
+export interface RecordBillPaymentInput {
+  billId: string;
+  monthId: string;
+  amount: number;
 }

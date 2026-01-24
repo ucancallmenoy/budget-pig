@@ -16,6 +16,7 @@ import { useAddContribution } from '@/hooks/savings/mutations/useAddContribution
 import { Saving } from '@/types/saving';
 import { formatCurrency } from '@/utils/currency';
 import { formatDate, getDaysUntil } from '@/utils/date';
+import { ContributionModal } from '@/components/shared/ContributionModal';
 
 interface SavingsViewProps {
   monthId: string;
@@ -42,7 +43,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
-  // Form states for create
   const [createName, setCreateName] = useState('');
   const [createTarget, setCreateTarget] = useState('');
   const [createSaved, setCreateSaved] = useState('');
@@ -50,7 +50,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
   const [createTargetDate, setCreateTargetDate] = useState('');
   const [createCategory, setCreateCategory] = useState('');
 
-  // Form states for edit
   const [editName, setEditName] = useState('');
   const [editTarget, setEditTarget] = useState('');
   const [editSaved, setEditSaved] = useState('');
@@ -76,11 +75,10 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
       targetAmount: target,
       savedAmount: saved,
       goalType: createGoalType,
-      targetDate: createTargetDate || undefined,
+      targetDate: createTargetDate ? new Date(createTargetDate) : undefined,
       category: createCategory || undefined,
     });
 
-    // Reset form
     setCreateName('');
     setCreateTarget('');
     setCreateSaved('');
@@ -106,7 +104,7 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
         targetAmount: target,
         savedAmount: saved,
         goalType: editGoalType,
-        targetDate: editTargetDate || undefined,
+        targetDate: editTargetDate ? new Date(editTargetDate) : undefined,
         category: editCategory || undefined,
       },
     });
@@ -148,18 +146,15 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
     setIsContributionModalOpen(true);
   };
 
-  // Filtered and searched savings
   const filteredSavings = useMemo(() => {
     if (!allSavings) return [];
 
     let filtered = allSavings;
 
-    // Apply tab filter
     if (activeTab !== 'all') {
       filtered = filtered.filter(saving => saving.goalType === activeTab);
     }
 
-    // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(saving =>
         saving.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -167,7 +162,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
       );
     }
 
-    // Apply category filter
     if (filterCategory !== 'all') {
       filtered = filtered.filter(saving => saving.category === filterCategory);
     }
@@ -191,7 +185,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
   return (
     <div className="min-h-screen bg-white p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
           <div>
             <h1 className="text-3xl font-semibold text-slate-800 mb-1">
@@ -199,7 +192,7 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
             </h1>
             <p className="text-slate-500 text-sm">Track and achieve your financial goals</p>
           </div>
-          <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className="shadow-lg">
+          <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className="shadow-lg cursor-pointer">
             <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
@@ -207,9 +200,7 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
           </Button>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {/* Total Target */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center">
@@ -223,7 +214,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
             <p className="text-xs text-slate-400 mt-1">{filteredSavings.length} goals</p>
           </div>
 
-          {/* Total Saved */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-emerald-200 transition-colors">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
@@ -237,7 +227,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
             <p className="text-xs text-slate-400 mt-1">this period</p>
           </div>
 
-          {/* Overall Progress */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-blue-200 transition-colors">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -249,7 +238,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
             <p className="text-xs text-slate-400 mt-1">completion rate</p>
           </div>
 
-          {/* Goals Completed */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-purple-200 transition-colors">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
@@ -264,13 +252,12 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
           </div>
         </div>
 
-        {/* Tabs and Filters */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex space-x-2 bg-slate-100 rounded-lg p-1">
               <button
                 onClick={() => setActiveTab('all')}
-                className={`px-3 py-2 rounded-md font-medium transition-colors text-sm w-32 ${
+                className={`px-3 py-2 rounded-md font-medium cursor-pointer transition-colors text-sm w-32 ${
                   activeTab === 'all'
                     ? 'bg-emerald-500 text-white shadow-lg'
                     : 'text-slate-600 hover:text-slate-900'
@@ -280,7 +267,7 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
               </button>
               <button
                 onClick={() => setActiveTab('monthly')}
-                className={`px-3 py-2 rounded-md font-medium transition-colors text-sm w-32 ${
+                className={`px-3 py-2 rounded-md font-medium cursor-pointer transition-colors text-sm w-32 ${
                   activeTab === 'monthly'
                     ? 'bg-emerald-500 text-white shadow-lg'
                     : 'text-slate-600 hover:text-slate-900'
@@ -290,7 +277,7 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
               </button>
               <button
                 onClick={() => setActiveTab('long_term')}
-                className={`px-3 py-2 rounded-md font-medium transition-colors text-sm w-32 ${
+                className={`px-3 py-2 rounded-md font-medium cursor-pointer transition-colors text-sm w-32 ${
                   activeTab === 'long_term'
                     ? 'bg-emerald-500 text-white shadow-lg'
                     : 'text-slate-600 hover:text-slate-900'
@@ -319,7 +306,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
             </div>
           </div>
 
-          {/* Savings List */}
           {filteredSavings.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
@@ -333,7 +319,7 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
               <p className="text-slate-500 mb-6">
                 {searchQuery || filterCategory !== 'all' ? 'Try adjusting your search or filters.' : 'Get started by creating your first savings goal.'}
               </p>
-              <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+              <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className='cursor-pointer'>
                 <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
@@ -350,7 +336,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
 
                 return (
                   <div key={saving._id} className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-all">
-                    {/* Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
@@ -374,7 +359,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
                       </span>
                     </div>
 
-                    {/* Progress Ring */}
                     <div className="flex justify-center mb-4">
                       <ProgressRing
                         progress={progress}
@@ -384,7 +368,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
                       />
                     </div>
 
-                    {/* Stats */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
                       <div className="text-center">
                         <p className="text-xs text-slate-500">Target</p>
@@ -406,7 +389,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
                       </div>
                     </div>
 
-                    {/* Target Date */}
                     {saving.targetDate && (
                       <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                         <div className="flex items-center justify-between">
@@ -430,14 +412,13 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
                       </div>
                     )}
 
-                    {/* Actions */}
                     <div className="flex space-x-2">
                       {!isComplete && (
                         <Button
                           variant="primary"
                           size="sm"
                           onClick={() => openContributionModal(saving)}
-                          className="flex-1"
+                          className="flex-1 cursor-pointer"
                         >
                           + Add Contribution
                         </Button>
@@ -446,7 +427,7 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => openEditModal(saving)}
-                        className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                        className="text-slate-600 cursor-pointer hover:text-slate-800 hover:bg-slate-100"
                       >
                         Edit
                       </Button>
@@ -454,7 +435,7 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteSaving(saving._id)}
-                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                        className="text-rose-600 cursor-pointer hover:text-rose-700 hover:bg-rose-50"
                       >
                         Delete
                       </Button>
@@ -467,7 +448,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
         </div>
       </div>
 
-      {/* Create Saving Modal */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -550,7 +530,6 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
         </div>
       </Modal>
 
-      {/* Edit Saving Modal */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -634,45 +613,16 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
         </div>
       </Modal>
 
-      {/* Contribution Modal - Assuming it exists, keeping as is */}
-      <Modal
+      <ContributionModal
         isOpen={isContributionModalOpen}
         onClose={() => {
           setIsContributionModalOpen(false);
           setSelectedSaving(null);
         }}
-        title="Add Contribution"
-        size="md"
-      >
-        <div className="space-y-4">
-          <Input
-            label="Amount"
-            type="number"
-            placeholder="0.00"
-            step="0.01"
-            min="0"
-            required
-          />
-          <Input
-            label="Note (Optional)"
-            placeholder="e.g., Monthly contribution"
-          />
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button variant="ghost" onClick={() => setIsContributionModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                // Handle contribution logic here
-                setIsContributionModalOpen(false);
-              }}
-            >
-              Add Contribution
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        saving={selectedSaving}
+        onSubmit={handleAddContribution}
+        isLoading={addContribution.isPending}
+      />
     </div>
   );
 }

@@ -11,9 +11,9 @@ export function useCreateDebt() {
       const response = await api.post<{ debt: Debt }>('/api/debts', data);
       return response.debt;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.debts(data.monthId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.monthlyDashboard(data.monthId) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['debts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }

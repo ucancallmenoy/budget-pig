@@ -14,7 +14,6 @@ export function SavingsChart({ savings }: SavingsChartProps) {
   const totalSaved = savings.reduce((sum, s) => sum + s.savedAmount, 0);
   const percentage = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
 
-  // Group by category
   const categoryData = savings.reduce((acc, saving) => {
     const category = saving.category || 'Uncategorized';
     if (!acc[category]) {
@@ -29,7 +28,6 @@ export function SavingsChart({ savings }: SavingsChartProps) {
 
   return (
     <div className="space-y-6">
-      {/* Donut Chart */}
       <div className="flex items-center justify-center">
         <div className="relative w-48 h-48">
           <svg className="w-full h-full transform -rotate-90">
@@ -59,7 +57,6 @@ export function SavingsChart({ savings }: SavingsChartProps) {
         </div>
       </div>
 
-      {/* Goals Summary */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-green-50 p-4 rounded-lg">
           <p className="text-2xl font-bold text-green-700">{completedGoals}</p>
@@ -71,7 +68,6 @@ export function SavingsChart({ savings }: SavingsChartProps) {
         </div>
       </div>
 
-      {/* Category Breakdown */}
       <div>
         <h4 className="text-sm font-semibold text-gray-900 mb-3">By Category</h4>
         <div className="space-y-3">

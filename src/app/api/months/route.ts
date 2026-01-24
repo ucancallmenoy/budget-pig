@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
 
     const { year, month, totalIncome } = validation.data;
 
-    // Check if month already exists
     const existingMonth = await MonthModel.findOne({
       userId: user.id,
       year,

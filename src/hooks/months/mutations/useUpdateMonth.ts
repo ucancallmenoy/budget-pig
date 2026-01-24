@@ -19,6 +19,7 @@ export function useUpdateMonth() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.months });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.month(variables.monthId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.monthlyDashboard(variables.monthId) });
     },
   });
 }

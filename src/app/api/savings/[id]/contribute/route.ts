@@ -25,25 +25,21 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     await connectDB();
 
-    // Find the saving
     const saving = await SavingModel.findOne({ _id: id, userId: user.id });
 
     if (!saving) {
       return NextResponse.json({ error: 'Saving not found' }, { status: 404 });
     }
 
-    // Create contribution record
     await SavingContributionModel.create({
       savingId: id,
       amount,
       note,
     });
 
-    // Update saved amount
     const newSavedAmount = saving.savedAmount + amount;
     saving.savedAmount = newSavedAmount;
 
-    // Check if goal is completed
     if (newSavedAmount >= saving.targetAmount && !saving.isCompleted) {
       saving.isCompleted = true;
     }

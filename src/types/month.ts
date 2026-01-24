@@ -2,7 +2,7 @@ export interface Month {
   _id: string;
   userId: string;
   year: number;
-  month: number; // 1-12
+  month: number;
   totalIncome: number;
   createdAt: Date;
   updatedAt: Date;

@@ -3,12 +3,12 @@ export type SavingGoalType = 'monthly' | 'long_term';
 export interface Saving {
   _id: string;
   userId: string;
-  monthId?: string; // Optional for long-term goals
+  monthId?: string;
   name: string;
   targetAmount: number;
   savedAmount: number;
   goalType: SavingGoalType;
-  targetDate?: Date; // For long-term goals
+  targetDate?: Date; 
   startDate: Date;
   category?: string;
   isCompleted: boolean;

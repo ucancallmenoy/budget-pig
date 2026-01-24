@@ -4,7 +4,6 @@ import { QUERY_KEYS } from '@/utils/constants';
 
 interface DeleteDebtParams {
   debtId: string;
-  monthId: string;
 }
 
 export function useDeleteDebt() {
@@ -14,9 +13,9 @@ export function useDeleteDebt() {
     mutationFn: async ({ debtId }: DeleteDebtParams) => {
       await api.delete(`/api/debts/${debtId}`);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.debts(variables.monthId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.monthlyDashboard(variables.monthId) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['debts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
