@@ -157,7 +157,7 @@ export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardV
               </div>
               <button
                 onClick={() => handleToggleSavingsDeduction(!deductSavings)}
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors group/toggle"
+                className="p-2 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors group/toggle"
                 title={deductSavings ? 'Including monthly savings' : 'Excluding monthly savings'}
               >
                 <svg 

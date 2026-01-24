@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getCurrentMonth } from '@/utils/date';
+import { cookies } from 'next/headers';
 
 export default async function DashboardLayout({
   children,
@@ -18,14 +19,16 @@ export default async function DashboardLayout({
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') || '';
   
-  const dashboardMatch = pathname.match(/\/dashboard\/(\d{4})\/(\d{1,2})/);
+  const cookieStore = await cookies();
+  const selectedYearCookie = cookieStore.get('selectedYear')?.value;
+  const selectedMonthCookie = cookieStore.get('selectedMonth')?.value;
   
   let year: number | undefined;
   let month: number | undefined;
   
-  if (dashboardMatch) {
-    year = parseInt(dashboardMatch[1]);
-    month = parseInt(dashboardMatch[2]);
+  if (selectedYearCookie && selectedMonthCookie) {
+    year = parseInt(selectedYearCookie);
+    month = parseInt(selectedMonthCookie);
   } else {
     const current = getCurrentMonth();
     year = current.year;

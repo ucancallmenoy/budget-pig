@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { getMonthName, getCurrentMonth } from '@/utils/date';
 import { useMonths } from '@/hooks/months/queries/useMonths';
+import { MonthSelector } from './MonthSelector';
 
 interface SidebarProps {
   currentYear?: number;
@@ -48,7 +49,7 @@ const quickLinks = [
     path: 'debts',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h10m4 0a1 1 0 100-2 1 1 0 000 2zM7 6h.01M11 6h.01M15 6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
       </svg>
     ),
   },
@@ -68,39 +69,42 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
-  const [currentYear, setCurrentYear] = useState(initialYear);
-  const [currentMonth, setCurrentMonth] = useState(initialMonth);
-
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [currentYear, setCurrentYear] = useState(() => {
+    if (typeof window === 'undefined') return initialYear;
+    const savedYear = localStorage.getItem('selectedYear');
+    return savedYear ? parseInt(savedYear) : initialYear;
+  });
+  
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (typeof window === 'undefined') return initialMonth;
+    const savedMonth = localStorage.getItem('selectedMonth');
+    return savedMonth ? parseInt(savedMonth) : initialMonth;
+  });
 
   useEffect(() => {
-    const savedYear = localStorage.getItem('selectedYear');
-    const savedMonth = localStorage.getItem('selectedMonth');
-    const savedSidebarState = localStorage.getItem('sidebarOpen');
+    setIsClient(true);
     
-    if (savedYear && savedMonth) {
-      const year = parseInt(savedYear);
-      const month = parseInt(savedMonth);
-      setSelectedYear(year);
-      setSelectedMonth(month);
-      setCurrentYear(year);
-      setCurrentMonth(month);
-    } else {
+    const savedSidebarState = localStorage.getItem('sidebarOpen');
+    if (savedSidebarState !== null && window.innerWidth >= 1024) {
+      setIsOpen(savedSidebarState === 'true');
+    }
+
+    if (!currentYear || !currentMonth) {
       const current = getCurrentMonth();
       setCurrentYear(current.year);
       setCurrentMonth(current.month);
-      setSelectedYear(current.year);
-      setSelectedMonth(current.month);
-    }
-
-    if (savedSidebarState !== null && window.innerWidth >= 1024) {
-      setIsOpen(savedSidebarState === 'true');
+      localStorage.setItem('selectedYear', current.year.toString());
+      localStorage.setItem('selectedMonth', current.month.toString());
+      document.cookie = `selectedYear=${current.year}; path=/; max-age=31536000`;
+      document.cookie = `selectedMonth=${current.month}; path=/; max-age=31536000`;
     }
   }, []);
 
   useEffect(() => {
+    if (!isClient) return;
+
     const dashboardMatch = pathname.match(/\/dashboard\/(\d{4})\/(\d{1,2})/);
     
     if (dashboardMatch) {
@@ -108,17 +112,12 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
       const month = parseInt(dashboardMatch[2]);
       setCurrentYear(year);
       setCurrentMonth(month);
-      setSelectedYear(year);
-      setSelectedMonth(month);
       localStorage.setItem('selectedYear', year.toString());
       localStorage.setItem('selectedMonth', month.toString());
-    } else {
-      if (selectedYear && selectedMonth) {
-        setCurrentYear(selectedYear);
-        setCurrentMonth(selectedMonth);
-      }
+      document.cookie = `selectedYear=${year}; path=/; max-age=31536000`;
+      document.cookie = `selectedMonth=${month}; path=/; max-age=31536000`;
     }
-  }, [pathname, selectedYear, selectedMonth]);
+  }, [pathname, isClient]);
 
   useEffect(() => {
     setIsMobileOpen(false);
@@ -161,10 +160,10 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
     
     setCurrentYear(newYear);
     setCurrentMonth(newMonth);
-    setSelectedYear(newYear);
-    setSelectedMonth(newMonth);
     localStorage.setItem('selectedYear', newYear.toString());
     localStorage.setItem('selectedMonth', newMonth.toString());
+    document.cookie = `selectedYear=${newYear}; path=/; max-age=31536000`;
+    document.cookie = `selectedMonth=${newMonth}; path=/; max-age=31536000`;
     router.push(`/dashboard/${newYear}/${newMonth}`);
   };
 
@@ -180,10 +179,10 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
     
     setCurrentYear(newYear);
     setCurrentMonth(newMonth);
-    setSelectedYear(newYear);
-    setSelectedMonth(newMonth);
     localStorage.setItem('selectedYear', newYear.toString());
     localStorage.setItem('selectedMonth', newMonth.toString());
+    document.cookie = `selectedYear=${newYear}; path=/; max-age=31536000`;
+    document.cookie = `selectedMonth=${newMonth}; path=/; max-age=31536000`;
     router.push(`/dashboard/${newYear}/${newMonth}`);
   };
 
@@ -192,6 +191,8 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
     setIsOpen(newState);
     localStorage.setItem('sidebarOpen', newState.toString());
   };
+
+  const overviewHref = currentYear && currentMonth ? `/dashboard/${currentYear}/${currentMonth}` : '/dashboard';
 
   return (
     <>
@@ -235,56 +236,13 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
         </div>
 
         {currentYear && currentMonth && (
-          <div className={`transition-all duration-300 ${isOpen ? 'px-4 py-4' : 'px-4 py-4 lg:px-2'}`}>
-            <div className={`bg-white rounded-2xl shadow-md border border-gray-200 transition-all duration-300 ${
-              isOpen ? 'p-4' : 'p-4 lg:p-2'
-            }`}>
-              <div className={`flex items-center ${isOpen ? 'justify-between' : 'justify-between lg:flex-col lg:gap-2'}`}>
-                <button
-                  onClick={handlePrevMonth}
-                  className="p-2 rounded-xl hover:bg-emerald-50 text-emerald-600 transition-colors flex-shrink-0"
-                  aria-label="Previous month"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                
-                <div className={`transition-all duration-300 ${
-                  isOpen 
-                    ? 'text-center flex-1' 
-                    : 'text-center flex-1 lg:flex-initial'
-                }`}>
-                  <div className={isOpen ? '' : 'lg:hidden'}>
-                    <h3 className="text-lg font-bold text-emerald-900">
-                      {getMonthName(currentMonth)}
-                    </h3>
-                    <p className="text-sm text-emerald-600">{currentYear}</p>
-                  </div>
-                  <div className={`${isOpen ? 'hidden' : 'hidden lg:flex lg:items-center lg:justify-center'}`}>
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center relative group">
-                      <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                        {getMonthName(currentMonth)} {currentYear}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={handleNextMonth}
-                  className="p-2 rounded-xl hover:bg-emerald-50 text-emerald-600 transition-colors flex-shrink-0"
-                  aria-label="Next month"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
+          <MonthSelector
+            currentYear={currentYear}
+            currentMonth={currentMonth}
+            onPrev={handlePrevMonth}
+            onNext={handleNextMonth}
+            isOpen={isOpen}
+          />
         )}
 
         <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
@@ -297,7 +255,7 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
             {navigation.map((item) => (
               <Link
                 key={item.name}
-                href={item.href}
+                href={item.name === 'Overview' ? overviewHref : item.href}
                 className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-all ${
                   isOpen ? 'px-4 py-3' : 'px-4 py-3 lg:px-2 lg:justify-center'
                 } ${
@@ -352,11 +310,30 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
                   );
                 })
               ) : (
-                <div className={`px-4 py-3 text-sm text-gray-500 text-center transition-all duration-300 ${
-                  isOpen ? 'opacity-100' : 'opacity-100 lg:opacity-0 lg:hidden'
-                }`}>
-                  No month data available
-                </div>
+                currentYear && currentMonth && quickLinks.map((link) => {
+                  const href = `/${link.path}/${currentYear}/${currentMonth}`;
+                  const isLinkActive = pathname.includes(`/${link.path}/`);
+                  
+                  return (
+                    <Link
+                      key={link.name}
+                      href={href}
+                      className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-all ${
+                        isOpen ? 'px-4 py-3' : 'px-4 py-3 lg:px-2 lg:justify-center'
+                      } ${
+                        isLinkActive
+                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-200'
+                          : 'text-emerald-700 hover:bg-emerald-50'
+                      }`}
+                      title={!isOpen ? link.name : undefined}
+                    >
+                      {link.icon}
+                      <span className={`transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-100 lg:opacity-0 lg:w-0 lg:overflow-hidden'}`}>
+                        {link.name}
+                      </span>
+                    </Link>
+                  );
+                })
               )}
             </div>
           </div>

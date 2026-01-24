@@ -42,8 +42,8 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
     ? (dashboard.totalSaved / dashboard.totalIncome) * 100
     : 0;
 
-  const maxMonthlyIncome = Math.max(...dashboard.monthlyBreakdown.map(m => m.income));
-  const maxMonthlyExpenses = Math.max(...dashboard.monthlyBreakdown.map(m => m.expenses));
+  const maxMonthlyIncome = Math.max(...dashboard.monthlyBreakdown.map(m => m.income), 1);
+  const maxMonthlyExpenses = Math.max(...dashboard.monthlyBreakdown.map(m => m.expenses), 1);
 
   return (
     <div className="min-h-screen bg-white p-6 md:p-8">
@@ -125,10 +125,10 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
           <h3 className="text-base font-semibold text-slate-700 mb-6">Monthly Breakdown</h3>
           <div className="space-y-4">
             {dashboard.monthlyBreakdown.map((monthData) => {
-              const incomePercent = (monthData.income / maxMonthlyIncome) * 100;
-              const expensePercent = (monthData.expenses / maxMonthlyExpenses) * 100;
+              const incomePercent = maxMonthlyIncome > 0 ? (monthData.income / maxMonthlyIncome) * 100 : 0;
+              const expensePercent = maxMonthlyExpenses > 0 ? (monthData.expenses / maxMonthlyExpenses) * 100 : 0;
               const net = monthData.income - monthData.expenses;
-              
+
               return (
                 <div key={monthData.month} className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -136,22 +136,22 @@ export function AnnualDashboardView({ initialYear }: AnnualDashboardViewProps) {
                     <div className="flex-1 mx-4 space-y-2">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-slate-100 rounded-full h-8 overflow-hidden">
-                          <div 
+                          <div
                             className="h-full bg-emerald-500 flex items-center justify-end pr-3 transition-all duration-500 rounded-full"
                             style={{ width: `${incomePercent}%` }}
                           >
-                            <span className="text-xs text-white font-semibold">{formatCurrency(monthData.income)}</span>
+                            {incomePercent > 5 && <span className="text-xs text-white font-semibold">{formatCurrency(monthData.income)}</span>}
                           </div>
                         </div>
                         <span className="text-xs text-emerald-600 w-16 font-medium">Income</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-slate-100 rounded-full h-8 overflow-hidden">
-                          <div 
+                          <div
                             className="h-full bg-rose-500 flex items-center justify-end pr-3 transition-all duration-500 rounded-full"
                             style={{ width: `${expensePercent}%` }}
                           >
-                            <span className="text-xs text-white font-semibold">{formatCurrency(monthData.expenses)}</span>
+                            {expensePercent > 5 && <span className="text-xs text-white font-semibold">{formatCurrency(monthData.expenses)}</span>}
                           </div>
                         </div>
                         <span className="text-xs text-rose-600 w-16 font-medium">Expense</span>

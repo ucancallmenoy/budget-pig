@@ -12,83 +12,131 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const monthId = searchParams.get('monthId');
+    const yearParam = searchParams.get('year');
+    const monthParam = searchParams.get('month');
 
-    if (!monthId) {
-      return NextResponse.json(
-        { error: 'monthId is required' },
-        { status: 400 }
-      );
-    }
-
-    const currentMonth = await MonthModel.findOne({ _id: monthId, userId: user.id });
-    
-    if (!currentMonth) {
-      return NextResponse.json(
-        { error: 'Month not found' },
-        { status: 404 }
-      );
-    }
-
-    const { year, month } = currentMonth;
-    const monthBills = await BillModel.find({
-      userId: user.id,
-      monthId,
-    }).sort({ dueDate: 1 });
-
-    const allPreviousMonths = await MonthModel.find({
-      userId: user.id,
-      $or: [
-        { year: { $lt: year } },
-        { year, month: { $lt: month } } 
-      ]
-    }).sort({ year: 1, month: 1 });
-
-    let recurringBills: any[] = [];
-
-    if (allPreviousMonths.length > 0) {
-      const previousMonthIds = allPreviousMonths.map(m => m._id.toString());
-
-      const monthlyRecurringBills = await BillModel.find({
-        userId: user.id,
-        monthId: { $in: previousMonthIds },
-        isRecurring: true,
-        recurrence: 'monthly',
-      });
-
-      // Get yearly recurring bills
-      const yearlyRecurringBills = await BillModel.find({
-        userId: user.id,
-        isRecurring: true,
-        recurrence: 'yearly',
-      });
-
-      const applicableYearlyBills = yearlyRecurringBills.filter(bill => {
-        const billMonth = allPreviousMonths.find(m => m._id.toString() === bill.monthId);
-        if (!billMonth) return false;
-        return billMonth.month === month;
-      });
-
-      recurringBills = [...monthlyRecurringBills, ...applicableYearlyBills];
-    }
-
-    const billMap = new Map<string, any>();
-    
-    monthBills.forEach(bill => {
-      billMap.set(bill._id.toString(), bill.toObject());
-    });
-
-    recurringBills.forEach(bill => {
-      const billId = bill._id.toString();
-      if (!billMap.has(billId)) {
-        billMap.set(billId, bill.toObject());
+    if (monthId) {
+      const currentMonth = await MonthModel.findOne({ _id: monthId, userId: user.id });
+      
+      if (!currentMonth) {
+        return NextResponse.json(
+          { error: 'Month not found' },
+          { status: 404 }
+        );
       }
-    });
 
-    const allBills = Array.from(billMap.values()).sort((a, b) => a.dueDate - b.dueDate);
+      const { year, month } = currentMonth;
+      const monthBills = await BillModel.find({
+        userId: user.id,
+        monthId,
+      }).sort({ dueDate: 1 });
 
-    console.log(`Retrieved ${allBills.length} bills for month ${month}/${year}`);
+      const allPreviousMonths = await MonthModel.find({
+        userId: user.id,
+        $or: [
+          { year: { $lt: year } },
+          { year, month: { $lt: month } }
+        ]
+      }).sort({ year: 1, month: 1 });
 
-    return NextResponse.json({ bills: allBills });
+      let recurringBills: any[] = [];
+
+      if (allPreviousMonths.length > 0) {
+        const previousMonthIds = allPreviousMonths.map(m => m._id.toString());
+        
+        recurringBills = await BillModel.find({
+          userId: user.id,
+          monthId: { $in: previousMonthIds },
+          isRecurring: true,
+        });
+      }
+
+      const billMap = new Map<string, any>();
+      
+      monthBills.forEach(bill => {
+        billMap.set(bill._id.toString(), bill.toObject());
+      });
+
+      recurringBills.forEach(bill => {
+        if (!billMap.has(bill._id.toString())) {
+          const billObj = bill.toObject();
+          billObj.monthId = monthId;
+          billMap.set(bill._id.toString(), billObj);
+        }
+      });
+
+      const allBills = Array.from(billMap.values()).sort((a, b) => a.dueDate - b.dueDate);
+
+      return NextResponse.json({ bills: allBills });
+    }
+
+    if (yearParam && monthParam) {
+      const year = parseInt(yearParam);
+      const month = parseInt(monthParam);
+
+      let currentMonth = await MonthModel.findOne({
+        userId: user.id,
+        year,
+        month,
+      });
+
+      if (!currentMonth) {
+        currentMonth = await MonthModel.create({
+          userId: user.id,
+          year,
+          month,
+          totalIncome: 0,
+        });
+      }
+
+      const monthBills = await BillModel.find({
+        userId: user.id,
+        monthId: currentMonth._id.toString(),
+      }).sort({ dueDate: 1 });
+
+      const allPreviousMonths = await MonthModel.find({
+        userId: user.id,
+        $or: [
+          { year: { $lt: year } },
+          { year, month: { $lt: month } }
+        ]
+      }).sort({ year: 1, month: 1 });
+
+      let recurringBills: any[] = [];
+
+      if (allPreviousMonths.length > 0) {
+        const previousMonthIds = allPreviousMonths.map(m => m._id.toString());
+        
+        recurringBills = await BillModel.find({
+          userId: user.id,
+          monthId: { $in: previousMonthIds },
+          isRecurring: true,
+        });
+      }
+
+      const billMap = new Map<string, any>();
+      
+      monthBills.forEach(bill => {
+        billMap.set(bill._id.toString(), bill.toObject());
+      });
+
+      recurringBills.forEach(bill => {
+        if (!billMap.has(bill._id.toString())) {
+          const billObj = bill.toObject();
+          billObj.monthId = currentMonth!._id.toString();
+          billMap.set(bill._id.toString(), billObj);
+        }
+      });
+
+      const allBills = Array.from(billMap.values()).sort((a, b) => a.dueDate - b.dueDate);
+
+      return NextResponse.json({ bills: allBills });
+    }
+
+    return NextResponse.json(
+      { error: 'monthId or year and month are required' },
+      { status: 400 }
+    );
   } catch (error) {
     console.error('Get bills error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {

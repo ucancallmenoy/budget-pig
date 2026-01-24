@@ -4,10 +4,21 @@ import { requireAuth } from '@/lib/auth/session';
 import { connectDB } from '@/lib/db/mongodb';
 import { MonthModel } from '@/lib/db/models/Month';
 import { MonthlyDashboardView } from '@/view/dashboard/monthly/MonthlyDashboardView';
+import { cookies } from 'next/headers';
 
 export default async function DashboardPage() {
   const user = await requireAuth();
-  const { year, month } = getCurrentMonth();
+  
+  const cookieStore = await cookies();
+  const selectedYearCookie = cookieStore.get('selectedYear')?.value;
+  const selectedMonthCookie = cookieStore.get('selectedMonth')?.value;
+  
+  let { year, month } = getCurrentMonth();
+  
+  if (selectedYearCookie && selectedMonthCookie) {
+    year = parseInt(selectedYearCookie);
+    month = parseInt(selectedMonthCookie);
+  }
 
   await connectDB();
 

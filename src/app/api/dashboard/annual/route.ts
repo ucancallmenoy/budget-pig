@@ -23,107 +23,93 @@ export async function GET(request: NextRequest) {
 
     const year = parseInt(yearParam);
 
-    const months = await MonthModel.find({
-      userId: user.id,
-      year,
-    }).sort({ month: 1 });
+    const monthlyBreakdown = [];
 
-    if (months.length === 0) {
-      return NextResponse.json({
-        dashboard: {
-          year,
-          totalIncome: 0,
-          totalExpenses: 0,
-          totalSaved: 0,
-          monthlyBreakdown: [],
-        },
+    for (let month = 1; month <= 12; month++) {
+      let monthData = await MonthModel.findOne({
+        userId: user.id,
+        year,
+        month,
       });
-    }
 
-    const monthIds = months.map((m) => m._id.toString());
+      if (!monthData) {
+        monthData = await MonthModel.create({
+          userId: user.id,
+          year,
+          month,
+          totalIncome: 0,
+        });
+      }
 
-    const billsByMonth = await BillModel.aggregate([
-      { $match: { userId: user.id, monthId: { $in: monthIds } } },
-      {
-        $group: {
-          _id: '$monthId',
-          total: { $sum: '$amount' },
+      const monthId = monthData._id.toString();
+
+      const billsByMonth = await BillModel.aggregate([
+        { $match: { userId: user.id, monthId } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$amount' },
+          },
         },
-      },
-    ]);
+      ]);
 
-    const allDebts = await DebtModel.find({
-      userId: user.id,
-    });
+      const billsTotal = billsByMonth[0]?.total || 0;
 
-    const debtsByMonthMap = new Map<string, number>();
-    
-    months.forEach(month => {
-      const monthId = month._id.toString();
-      const currentYear = month.year;
-      const currentMonth = month.month;
+      const allDebts = await DebtModel.find({
+        userId: user.id,
+      });
 
       const activeDebts = allDebts.filter(debt => {
         const debtStartDate = new Date(debt.startYear, debt.startMonth - 1, 1);
-        const monthDate = new Date(currentYear, currentMonth - 1, 1);
-        
+        const monthDate = new Date(year, month - 1, 1);
+
         if (monthDate < debtStartDate) {
           return false;
         }
-        
+
         if (debt.durationMonths) {
           const debtEndDate = new Date(debt.startYear, debt.startMonth - 1 + debt.durationMonths, 0);
           if (monthDate > debtEndDate) {
             return false;
           }
         }
-        
+
         const remainingBalance = debt.originalBalance - (debt.totalPaidAllTime || 0);
         return remainingBalance > 0;
       });
 
       const totalMinPayment = activeDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
-      debtsByMonthMap.set(monthId, totalMinPayment);
-    });
 
-    const savingsByMonth = await SavingModel.aggregate([
-      { $match: { userId: user.id, monthId: { $in: monthIds } } },
-      {
-        $group: {
-          _id: '$monthId',
-          total: { $sum: '$savedAmount' },
+      const savingsByMonth = await SavingModel.aggregate([
+        { $match: { userId: user.id, monthId } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$savedAmount' },
+          },
         },
-      },
-    ]);
+      ]);
 
-    const billsMap = new Map(
-      billsByMonth.map((b) => [b._id.toString(), b.total])
-    );
-    const savingsMap = new Map(
-      savingsByMonth.map((s) => [s._id.toString(), s.total])
-    );
+      const savingsTotal = savingsByMonth[0]?.total || 0;
+
+      const expenses = billsTotal + totalMinPayment;
+
+      monthlyBreakdown.push({
+        month,
+        income: monthData.totalIncome,
+        expenses,
+        saved: savingsTotal,
+      });
+    }
 
     let totalIncome = 0;
     let totalExpenses = 0;
     let totalSaved = 0;
 
-    const monthlyBreakdown = months.map((month) => {
-      const monthIdStr = month._id.toString();
-      const bills = billsMap.get(monthIdStr) || 0;
-      const debts = debtsByMonthMap.get(monthIdStr) || 0;
-      const saved = savingsMap.get(monthIdStr) || 0;
-      const expenses = bills + debts;
-
-      totalIncome += month.totalIncome;
-      totalExpenses += expenses;
-      totalSaved += saved;
-
-      return {
-        month: month.month,
-        income: month.totalIncome,
-        expenses,
-        saved,
-      };
+    monthlyBreakdown.forEach((data) => {
+      totalIncome += data.income;
+      totalExpenses += data.expenses;
+      totalSaved += data.saved;
     });
 
     const dashboard = {

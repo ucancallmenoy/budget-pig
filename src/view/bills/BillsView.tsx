@@ -394,7 +394,7 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
                     <th className="text-center py-3 px-4 font-semibold text-slate-700 text-sm">Due Date</th>
                     <th className="text-center py-3 px-4 font-semibold text-slate-700 text-sm">Type</th>
                     <th className="text-center py-3 px-4 font-semibold text-slate-700 text-sm">Status</th>
-                    <th className="text-right py-3 px-4 font-semibold text-slate-700 text-sm">Actions</th>
+                    <th className="text-center py-3 px-4 font-semibold text-slate-700 text-sm">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -439,7 +439,7 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
                           </span>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
+                          <div className="flex flex-col items-center">
                             {billStatus.status === 'paid' ? (
                               <>
                                 <span className="text-xs font-medium text-emerald-600">Paid</span>
@@ -462,42 +462,44 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
                             )}
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-right space-x-2">
-                          {billStatus.status !== 'paid' && (
+                        <td className="py-4 px-4 text-right">
+                          <div className="flex justify-end space-x-2">
+                            {billStatus.status !== 'paid' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openPaymentModal(bill)}
+                                className="text-emerald-600 cursor-pointer hover:text-emerald-800 hover:bg-emerald-50"
+                              >
+                                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Pay
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => openPaymentModal(bill)}
-                              className="text-emerald-600 cursor-pointer hover:text-emerald-800 hover:bg-emerald-50"
+                              onClick={() => openEditModal(bill)}
+                              className="text-slate-600 cursor-pointer hover:text-slate-800 hover:bg-slate-100"
                             >
                               <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
-                              Pay
+                              Edit
                             </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditModal(bill)}
-                            className="text-slate-600 cursor-pointer hover:text-slate-800 hover:bg-slate-100"
-                          >
-                            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Edit
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteBill(bill._id)}
-                            className="text-rose-600 cursor-pointer hover:text-rose-700 hover:bg-rose-50"
-                          >
-                            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Delete
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteBill(bill._id)}
+                              className="text-rose-600 cursor-pointer hover:text-rose-700 hover:bg-rose-50"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Delete
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
