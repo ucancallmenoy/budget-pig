@@ -124,10 +124,4 @@ npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
 
-## License
-
-MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+Created by Patrick
