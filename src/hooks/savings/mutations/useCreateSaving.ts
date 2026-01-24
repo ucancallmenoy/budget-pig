@@ -11,9 +11,9 @@ export function useCreateSaving() {
       const response = await api.post<{ saving: Saving }>('/api/savings', data);
       return response.saving;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.savings(data.monthId || '') });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.monthlyDashboard(data.monthId || '') });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }

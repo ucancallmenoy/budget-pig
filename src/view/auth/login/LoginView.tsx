@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -13,6 +13,11 @@ export function LoginView() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,18 +45,18 @@ export function LoginView() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-12">
+      <div className={`w-full max-w-md transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         <div className="text-center mb-8">
-          <img src="/logo.png" alt="Budget Pig" className="w-20 h-20 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-slate-800">Welcome Back</h1>
-          <p className="text-slate-500 mt-2">Sign in to your account</p>
+          <img src="/logo.png" alt="Budget Pig" className="w-32 h-32 mx-auto mb-6 drop-shadow-lg" />
+          <h1 className="text-4xl font-bold text-slate-800 mb-2">Welcome Back</h1>
+          <p className="text-slate-600 text-lg">Sign in to your account</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-10">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
                 {error}
               </div>
             )}
@@ -63,6 +68,7 @@ export function LoginView() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
+              className="text-lg"
             />
 
             <Input
@@ -72,6 +78,7 @@ export function LoginView() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              className="text-lg"
             />
 
             <Button
@@ -79,14 +86,17 @@ export function LoginView() {
               variant="primary"
               size="lg"
               isLoading={isLoading}
-              className="w-full"
+              className="w-full py-4 text-lg font-semibold bg-emerald-600 hover:bg-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300"
             >
               Sign In
             </Button>
 
             <p className="text-center text-sm text-slate-600">
               Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-emerald-600 hover:text-emerald-700 font-medium">
+              <Link
+                href="/register"
+                className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors duration-200"
+              >
                 Sign up
               </Link>
             </p>

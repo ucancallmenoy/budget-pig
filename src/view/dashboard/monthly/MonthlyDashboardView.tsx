@@ -11,6 +11,7 @@ import { IncomeCalculatorModal } from '@/components/shared/IncomeCalculatorModal
 import { useMonthlyDashboard } from '@/hooks/dashboard/useMonthlyDashboard';
 import { useMonth } from '@/hooks/months/queries/useMonth';
 import { useUpdateMonth } from '@/hooks/months/mutations/useUpdateMonth';
+import { useSavings } from '@/hooks/savings/queries/useSavings';
 import { formatCurrency } from '@/utils/currency';
 import { getMonthName } from '@/utils/date';
 
@@ -25,10 +26,12 @@ export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardV
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [deductSavings, setDeductSavings] = useState(false);
   const [savingsFilter, setSavingsFilter] = useState<'all'>('all');
+  const [savingsChartMode, setSavingsChartMode] = useState<'monthly' | 'long_term'>('monthly');
 
   const { data: dashboard, isLoading: isDashboardLoading } = useMonthlyDashboard(monthId);
   const { data: monthData } = useMonth(monthId);
   const updateMonth = useUpdateMonth();
+  const { data: allSavings } = useSavings(monthId);
 
   useEffect(() => {
     const savedDeductSavings = localStorage.getItem('deductMonthlySavings');
@@ -95,8 +98,17 @@ export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardV
   };
 
   const filteredSavings = getFilteredSavingsStats();
-  const filteredProgress = filteredSavings.totalTarget > 0 
-    ? (filteredSavings.totalSaved / filteredSavings.totalTarget) * 100 
+
+  const longTermSavings = allSavings?.filter(s => s.goalType === 'long_term') || [];
+  const longTermStats = {
+    totalTarget: longTermSavings.reduce((sum, s) => sum + s.targetAmount, 0),
+    totalSaved: longTermSavings.reduce((sum, s) => sum + s.savedAmount, 0),
+    count: longTermSavings.length,
+  };
+
+  const chartStats = savingsChartMode === 'monthly' ? filteredSavings : longTermStats;
+  const filteredProgress = chartStats.totalTarget > 0 
+    ? (chartStats.totalSaved / chartStats.totalTarget) * 100 
     : 0;
 
   return (
@@ -202,21 +214,45 @@ export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardV
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <h3 className="text-base font-semibold text-slate-700 mb-6">Savings Progress</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-base font-semibold text-slate-700">Savings Progress</h3>
+              <button
+                onClick={() => setSavingsChartMode(savingsChartMode === 'monthly' ? 'long_term' : 'monthly')}
+                className="p-2 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors group/toggle"
+                title={savingsChartMode === 'monthly' ? 'Switch to long-term' : 'Switch to monthly'}
+              >
+                <svg 
+                  className={`w-5 h-5 transition-colors ${
+                    savingsChartMode === 'monthly' ? 'text-emerald-600' : 'text-emerald-600'
+                  }`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                {savingsChartMode === 'long_term' && (
+                  <div className="absolute hidden group-hover/toggle:flex flex-col items-center bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap -translate-x-1/2 bottom-full left-1/2 mb-2 z-10 after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-slate-900">
+                    Long-term
+                  </div>
+                )}
+              </button>
+            </div>
             <div className="flex flex-col items-center">
               <ProgressRing 
                 progress={filteredProgress}
                 size={140}
                 strokeWidth={10}
                 color="#10b981"
-                value={formatCurrency(filteredSavings.totalSaved)}
+                value={formatCurrency(chartStats.totalSaved)}
               />
               <div className="mt-6 text-center space-y-1">
+                <p className="text-xs text-slate-500 mb-1">{savingsChartMode === 'monthly' ? 'Goal for the month' : 'Long-term goal'}</p>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Target Amount</p>
-                <p className="text-xl font-semibold text-slate-800">{formatCurrency(filteredSavings.totalTarget)}</p>
+                <p className="text-xl font-semibold text-slate-800">{formatCurrency(chartStats.totalTarget)}</p>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 rounded-full mt-2">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                  <span className="text-xs font-medium text-emerald-700">{filteredSavings.count} Active Goals</span>
+                  <span className="text-xs font-medium text-emerald-700">{chartStats.count} Active Goals</span>
                 </div>
               </div>
             </div>
@@ -351,6 +387,40 @@ export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardV
             <div className="p-5 rounded-lg bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100">
               <p className="text-xs font-medium text-violet-700 uppercase tracking-wide mb-2">Total Saved</p>
               <p className="text-2xl font-semibold text-violet-900">{formatCurrency(filteredSavings.totalSaved)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold text-slate-700">Long term savings goals</h3>
+            </div>
+
+            <Link href={`/savings/${monthId}`}>
+              <Button variant="primary" size="sm" className="bg-emerald-600 cursor-pointer hover:bg-emerald-700 text-white border-0 h-9 px-4 text-sm">
+                Manage Goals
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-5 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
+              <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide mb-2">Active Goals</p>
+              <p className="text-3xl font-semibold text-emerald-900">{longTermStats.count}</p>
+            </div>
+            <div className="p-5 rounded-lg bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100">
+              <p className="text-xs font-medium text-sky-700 uppercase tracking-wide mb-2">Total Target</p>
+              <p className="text-2xl font-semibold text-sky-900">{formatCurrency(longTermStats.totalTarget)}</p>
+            </div>
+            <div className="p-5 rounded-lg bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100">
+              <p className="text-xs font-medium text-violet-700 uppercase tracking-wide mb-2">Total Saved</p>
+              <p className="text-2xl font-semibold text-violet-900">{formatCurrency(longTermStats.totalSaved)}</p>
             </div>
           </div>
         </div>

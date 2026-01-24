@@ -17,9 +17,9 @@ export function useUpdateSaving() {
       const response = await api.put<{ saving: Saving }>(`/api/savings/${savingId}`, data);
       return response.saving;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.savings(variables.monthId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.monthlyDashboard(variables.monthId) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
@@ -31,6 +31,12 @@ export function RegisterView() {
   const [attemptsRemaining, setAttemptsRemaining] = useState(5);
   const [canResend, setCanResend] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,25 +205,25 @@ export function RegisterView() {
 
   if (showOTPVerification) {
     return (
-      <div className="flex items-center justify-center min-h-screen px-4 py-12">
-        <div className="w-full max-w-md">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-12">
+        <div className={`w-full max-w-md transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="text-center mb-8">
-            <img src="/logo.png" alt="Budget Pig" className="w-20 h-20 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-slate-800">Verify Your Email</h1>
-            <p className="text-slate-500 mt-2">Enter the 6-digit OTP sent to {email}</p>
+            <img src="/logo.png" alt="Budget Pig" className="w-32 h-32 mx-auto mb-6 drop-shadow-lg" />
+            <h1 className="text-4xl font-bold text-slate-800 mb-2">Verify Your Email</h1>
+            <p className="text-slate-600 text-lg">Enter the 6-digit OTP sent to {email}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-lg p-8">
-            <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-10">
+            <div className="space-y-8">
               {otpError && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
                   {otpError}
                 </div>
               )}
 
               <div className="space-y-4">
                 <p className="text-sm font-medium text-slate-700">Enter OTP</p>
-                <div className="flex gap-2 justify-center">
+                <div className="flex gap-3 justify-center">
                   {otp.map((digit, index) => (
                     <input
                       key={index}
@@ -227,8 +233,8 @@ export function RegisterView() {
                       value={digit}
                       onChange={(e) => handleOTPChange(index, e.target.value)}
                       onKeyDown={(e) => handleOTPKeyDown(index, e)}
-                      className={`w-12 h-12 text-center text-2xl font-bold border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 transition-colors ${
-                        otpError ? 'border-rose-300' : 'border-gray-200'
+                      className={`w-14 h-14 text-center text-3xl font-bold border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 transition-all duration-200 ${
+                        otpError ? 'border-red-300' : 'border-gray-200'
                       }`}
                       disabled={isLoading}
                     />
@@ -241,7 +247,7 @@ export function RegisterView() {
                 variant="primary"
                 size="lg"
                 isLoading={isLoading}
-                className="w-full"
+                className="w-full py-4 text-lg font-semibold bg-emerald-600 hover:bg-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300"
                 disabled={otp.some((d) => !d)}
               >
                 Verify OTP
@@ -253,7 +259,7 @@ export function RegisterView() {
                   {canResend ? (
                     <button
                       onClick={handleResendOTP}
-                      className="text-emerald-600 hover:text-emerald-700 font-medium"
+                      className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors duration-200"
                     >
                       Resend OTP
                     </button>
@@ -273,7 +279,7 @@ export function RegisterView() {
                     setOtpError('');
                     setError('');
                   }}
-                  className="text-sm text-slate-600 hover:text-slate-800"
+                  className="text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors duration-200"
                 >
                   Back to Registration
                 </button>
@@ -286,18 +292,18 @@ export function RegisterView() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-12">
+      <div className={`w-full max-w-md transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         <div className="text-center mb-8">
-          <img src="/logo.png" alt="Budget Pig" className="w-20 h-20 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-slate-800">Create Account</h1>
-          <p className="text-slate-500 mt-2">Start managing your budget today</p>
+          <img src="/logo.png" alt="Budget Pig" className="w-32 h-32 mx-auto mb-6 drop-shadow-lg" />
+          <h1 className="text-4xl font-bold text-slate-800 mb-2">Create Account</h1>
+          <p className="text-slate-600 text-lg">Start managing your budget today</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-lg p-8">
-          <form onSubmit={handleRegisterSubmit} className="space-y-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-10">
+          <form onSubmit={handleRegisterSubmit} className="space-y-8">
             {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
                 {error}
               </div>
             )}
@@ -310,6 +316,7 @@ export function RegisterView() {
               placeholder="John Doe"
               required
               disabled={isLoading}
+              className="text-lg"
             />
 
             <Input
@@ -320,6 +327,7 @@ export function RegisterView() {
               placeholder="you@example.com"
               required
               disabled={isLoading}
+              className="text-lg"
             />
 
             <Input
@@ -331,6 +339,7 @@ export function RegisterView() {
               helperText="Minimum 6 characters"
               required
               disabled={isLoading}
+              className="text-lg"
             />
 
             <Input
@@ -341,6 +350,7 @@ export function RegisterView() {
               placeholder="••••••••"
               required
               disabled={isLoading}
+              className="text-lg"
             />
 
             <Button
@@ -348,7 +358,7 @@ export function RegisterView() {
               variant="primary"
               size="lg"
               isLoading={isLoading}
-              className="w-full"
+              className="w-full py-4 text-lg font-semibold bg-emerald-600 hover:bg-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300"
             >
               Create Account
             </Button>
@@ -357,7 +367,7 @@ export function RegisterView() {
               Already have an account?{' '}
               <Link
                 href="/login"
-                className="text-emerald-600 hover:text-emerald-700 font-medium"
+                className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors duration-200"
               >
                 Sign in
               </Link>

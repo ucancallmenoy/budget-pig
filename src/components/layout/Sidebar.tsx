@@ -342,7 +342,7 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
         <div className="p-4 border-t border-gray-200 transition-all duration-300">
           <button 
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className={`w-full flex items-center gap-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-all ${
+            className={`w-full flex cursor-pointer items-center gap-3 rounded-xl text-sm font-medium text-rose-600 hover:text-rose-800 transition-all ${
               isOpen ? 'px-4 py-3' : 'px-4 py-3 lg:px-2 lg:justify-center'
             }`}
             title={!isOpen ? 'Sign Out' : undefined}
@@ -358,7 +358,7 @@ export function Sidebar({ currentYear: initialYear, currentMonth: initialMonth }
 
         <button
           onClick={toggleSidebar}
-          className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-emerald-600 rounded-full items-center justify-center text-white hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl z-50"
+          className="hidden lg:flex cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-emerald-600 rounded-full items-center justify-center text-white hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl z-50"
           aria-label="Toggle sidebar"
           title="Toggle sidebar"
         >

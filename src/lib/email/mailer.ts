@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 export async function sendOTPEmail({ email, otp, name }: SendOTPEmailParams) {
   try {
     const mailOptions = {
-      from: `Budget Pig <${process.env.GMAIL_USER}>`,
+      from: `Budget Piggy <${process.env.GMAIL_USER}>`,
       to: email,
       subject: 'Your Budget Pig Registration OTP',
       html: `
@@ -62,7 +62,6 @@ export async function sendOTPEmail({ email, otp, name }: SendOTPEmailParams) {
               </div>
               
               <div class="footer">
-                <p>© 2024 Budget Pig. All rights reserved.</p>
                 <p class="warning">This is an automated message. Please do not reply to this email.</p>
               </div>
             </div>
