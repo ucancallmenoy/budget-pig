@@ -1,4 +1,16 @@
 import { Bill } from '@/types/bill';
+import {
+  type Period,
+  type ViewMode,
+  clampDueDate,
+  isDueDateInPeriod,
+  isDueDateInViewMode,
+  buildPeriodKey,
+} from '@/utils/period';
+
+// ---------------------------------------------------------------------------
+// Payment helpers
+// ---------------------------------------------------------------------------
 
 export function getMonthBillPaymentAmount(bill: Bill, monthId: string): number {
   const monthPayment = bill.monthlyPayments?.find(p => p.monthId === monthId);
@@ -14,17 +26,27 @@ export function getBillPaymentStatus(bill: Bill, monthId: string): 'paid' | 'unp
   return isBillPaidThisMonth(bill, monthId) ? 'paid' : 'unpaid';
 }
 
+// ---------------------------------------------------------------------------
+// Due date helpers (period-aware, uses clampDueDate)
+// ---------------------------------------------------------------------------
+
 /**
- * Get days until bill is due in a specific month
- * @param dueDate - Day of month (1-31)
- * @param year - Year to check
- * @param month - Month to check (1-12)
+ * Get the effective due date for a bill in a given month.
+ * Clamps day-31 invoices to the actual last day (e.g. Feb 28).
+ */
+export function getEffectiveDueDate(bill: Bill, year: number, month: number): number {
+  return clampDueDate(bill.dueDate, year, month);
+}
+
+/**
+ * Get days until bill is due in a specific month.
+ * Uses clampDueDate to handle months with fewer days.
  */
 export function getDaysUntilDue(dueDate: number, year: number, month: number): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const dueDateForMonth = Math.min(dueDate, new Date(year, month, 0).getDate());
+  const dueDateForMonth = clampDueDate(dueDate, year, month);
   const nextDueDate = new Date(year, month - 1, dueDateForMonth);
   nextDueDate.setHours(0, 0, 0, 0);
 
@@ -37,10 +59,7 @@ export function getDaysUntilDue(dueDate: number, year: number, month: number): n
 }
 
 /**
- * Check if bill is overdue in a specific month
- * @param dueDate - Day of month (1-31)
- * @param year - Year to check
- * @param month - Month to check (1-12)
+ * Check if bill is overdue in a specific month.
  */
 export function isBillOverdue(dueDate: number, year: number, month: number): boolean {
   const today = new Date();
@@ -48,18 +67,46 @@ export function isBillOverdue(dueDate: number, year: number, month: number): boo
   const currentMonth = today.getMonth() + 1;
   const currentDay = today.getDate();
 
-  if (currentYear !== year || currentMonth !== month) {
-    return false;
+  if (currentYear !== year || currentMonth !== month) return false;
+
+  const effectiveDue = clampDueDate(dueDate, year, month);
+  return currentDay > effectiveDue;
+}
+
+// ---------------------------------------------------------------------------
+// Period-aware visibility
+// ---------------------------------------------------------------------------
+
+/**
+ * Determines whether a bill should appear in the given view mode.
+ * Also respects `stoppedFromPeriod` for recurring bills.
+ */
+export function isBillInViewMode(
+  bill: Bill,
+  year: number,
+  month: number,
+  viewMode: ViewMode,
+): boolean {
+  // Check if recurring bill was stopped before this period
+  if (bill.isRecurring && bill.stoppedFromPeriod) {
+    const currentKey = viewMode === 'monthly'
+      ? buildPeriodKey(year, month)
+      : buildPeriodKey(year, month, viewMode as Period);
+    if (currentKey >= bill.stoppedFromPeriod) return false;
   }
 
-  return currentDay > dueDate;
+  return isDueDateInViewMode(bill.dueDate, year, month, viewMode);
 }
+
+// ---------------------------------------------------------------------------
+// Full status display
+// ---------------------------------------------------------------------------
 
 export function getBillStatusDisplay(
   bill: Bill,
   monthId: string,
   year: number,
-  month: number
+  month: number,
 ): {
   status: 'paid' | 'overdue' | 'upcoming';
   daysUntilDue: number;

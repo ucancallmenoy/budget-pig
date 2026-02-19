@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { StatWidget } from '@/components/shared/StatWidget';
 import { ProgressRing } from '@/components/shared/ProgressRing';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
-import { IncomeCalculatorModal } from '@/components/shared/IncomeCalculatorModal';
+import ViewModeToggle from '@/components/shared/ViewModeToggle';
 import { useMonthlyDashboard } from '@/hooks/dashboard/useMonthlyDashboard';
-import { useMonth } from '@/hooks/months/queries/useMonth';
-import { useUpdateMonth } from '@/hooks/months/mutations/useUpdateMonth';
 import { useSavings } from '@/hooks/savings/queries/useSavings';
 import { formatCurrency } from '@/utils/currency';
 import { getMonthName } from '@/utils/date';
+import type { ViewMode } from '@/utils/period';
 
 interface MonthlyDashboardViewProps {
   monthId: string;
@@ -22,46 +19,20 @@ interface MonthlyDashboardViewProps {
 }
 
 export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardViewProps) {
-  const router = useRouter();
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
-  const [deductSavings, setDeductSavings] = useState(false);
-  const [savingsFilter, setSavingsFilter] = useState<'all'>('all');
+  const [deductSavings, setDeductSavings] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('deductMonthlySavings');
+    return saved ? JSON.parse(saved) : false;
+  });
   const [savingsChartMode, setSavingsChartMode] = useState<'monthly' | 'long_term'>('monthly');
+  const [viewMode, setViewMode] = useState<ViewMode>('monthly');
 
-  const { data: dashboard, isLoading: isDashboardLoading } = useMonthlyDashboard(monthId);
-  const { data: monthData } = useMonth(monthId);
-  const updateMonth = useUpdateMonth();
+  const { data: dashboard, isLoading: isDashboardLoading } = useMonthlyDashboard(monthId, viewMode);
   const { data: allSavings } = useSavings(monthId);
-
-  useEffect(() => {
-    const savedDeductSavings = localStorage.getItem('deductMonthlySavings');
-    if (savedDeductSavings !== null) {
-      setDeductSavings(JSON.parse(savedDeductSavings));
-    }
-    
-    const savedSavingsFilter = localStorage.getItem('savingsFilter');
-    if (savedSavingsFilter) {
-      setSavingsFilter(savedSavingsFilter as 'all');
-    }
-  }, []);
 
   const handleToggleSavingsDeduction = (value: boolean) => {
     setDeductSavings(value);
     localStorage.setItem('deductMonthlySavings', JSON.stringify(value));
-  };
-
-  const handleSavingsFilterChange = (filter: 'all') => {
-    setSavingsFilter(filter);
-    localStorage.setItem('savingsFilter', filter);
-  };
-
-  const handleUpdateIncome = async (netIncome: number) => {
-    await updateMonth.mutateAsync({
-      monthId,
-      data: { totalIncome: netIncome },
-    });
-
-    setIsIncomeModalOpen(false);
   };
 
   if (isDashboardLoading) {
@@ -81,10 +52,6 @@ export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardV
   }
 
   const hasIncome = dashboard.totalIncome > 0;
-  const savingsProgress = dashboard.savings.totalTarget > 0 
-    ? (dashboard.savings.totalSaved / dashboard.savings.totalTarget) * 100 
-    : 0;
-
   const displayRemaining = deductSavings 
     ? dashboard.summary.remainingAfterSavings 
     : dashboard.summary.remainingIncome;
@@ -121,16 +88,20 @@ export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardV
             </h1>
             <p className="text-slate-500 text-sm">Monitor your income, expenses, and savings goals</p>
           </div>
-          <Button
-            variant="primary"
-            onClick={() => setIsIncomeModalOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer text-white shadow-sm border-0 flex items-center gap-2 h-10 px-5"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            {hasIncome ? 'Edit Income' : 'Add Income'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            <Link href={`/budget/${monthId}`}>
+              <Button
+                variant="primary"
+                className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer text-white shadow-sm border-0 flex items-center gap-2 h-10 px-5"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                {hasIncome ? 'Manage Budget' : 'Add Budget'}
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -426,14 +397,6 @@ export function MonthlyDashboardView({ monthId, year, month }: MonthlyDashboardV
         </div>
       </div>
 
-      <IncomeCalculatorModal
-        isOpen={isIncomeModalOpen}
-        onClose={() => setIsIncomeModalOpen(false)}
-        initialIncome={dashboard?.totalIncome}
-        onSave={handleUpdateIncome}
-        isLoading={updateMonth.isPending}
-        hasExistingIncome={hasIncome}
-      />
     </div>
   );
 }

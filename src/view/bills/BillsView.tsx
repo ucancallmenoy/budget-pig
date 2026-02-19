@@ -6,7 +6,11 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { RecurringActionModal } from '@/components/ui/RecurringActionModal';
 import { CategoryBadge } from '@/components/shared/CategoryBadge';
+import ViewModeToggle from '@/components/shared/ViewModeToggle';
+import { useToast } from '@/components/ui/Toast';
 import { useBills } from '@/hooks/bills/queries/useBills';
 import { useCreateBill } from '@/hooks/bills/mutations/useCreateBill';
 import { useUpdateBill } from '@/hooks/bills/mutations/useUpdateBill';
@@ -17,6 +21,7 @@ import { formatCurrency } from '@/utils/currency';
 import { formatDate } from '@/utils/date';
 import { BILL_CATEGORIES } from '@/utils/constants';
 import { getMonthBillPaymentAmount, getBillStatusDisplay } from '@/utils/bill';
+import { type ViewMode, buildPeriodKey, type Period } from '@/utils/period';
 
 interface BillsViewProps {
   monthId: string;
@@ -25,6 +30,8 @@ interface BillsViewProps {
 }
 
 export function BillsView({ monthId, year, month }: BillsViewProps) {
+  const toast = useToast();
+  const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -33,6 +40,19 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'unpaid' | 'overdue'>('all');
   const [paymentAmount, setPaymentAmount] = useState('');
+
+  // Confirm modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmBillId, setConfirmBillId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Recurring action modal state (for delete)
+  const [recurringDeleteOpen, setRecurringDeleteOpen] = useState(false);
+  const [recurringDeleteBill, setRecurringDeleteBill] = useState<Bill | null>(null);
+
+  // Recurring action modal state (for edit)
+  const [recurringEditOpen, setRecurringEditOpen] = useState(false);
+  const [pendingEditData, setPendingEditData] = useState<Record<string, unknown> | null>(null);
 
   const [createName, setCreateName] = useState('');
   const [createCategory, setCreateCategory] = useState<BillCategory>('utilities');
@@ -48,7 +68,7 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
   const [editIsRecurring, setEditIsRecurring] = useState(false);
   const [editRecurrence, setEditRecurrence] = useState<BillRecurrence>('one_time');
 
-  const { data: bills, isLoading } = useBills(monthId);
+  const { data: bills, isLoading } = useBills(monthId, viewMode);
   const createBill = useCreateBill();
   const updateBill = useUpdateBill();
   const deleteBill = useDeleteBill();
@@ -75,12 +95,12 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
     const dueDate = parseInt(createDueDate);
     
     if (!createName || !createAmount || isNaN(amount) || isNaN(dueDate)) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
     if (amount <= 0) {
-      alert('Amount must be greater than 0');
+      toast.error('Amount must be greater than 0');
       return;
     }
 
@@ -113,9 +133,10 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
       setCreateIsRecurring(false);
       setCreateRecurrence('one_time');
       setIsCreateModalOpen(false);
+      toast.success('Bill created successfully');
     } catch (error) {
       console.error('Error creating bill:', error);
-      alert('Failed to create bill');
+      toast.error('Failed to create bill');
     }
   };
 
@@ -126,12 +147,12 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
     const dueDate = parseInt(editDueDate);
     
     if (!editName || !editAmount || isNaN(amount) || isNaN(dueDate)) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
     if (amount <= 0) {
-      alert('Amount must be greater than 0');
+      toast.error('Amount must be greater than 0');
       return;
     }
 
@@ -141,24 +162,62 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
     }
 
     try {
+      const editData = {
+        name: editName,
+        category: editCategory,
+        amount,
+        dueDate,
+        isRecurring: editIsRecurring,
+        recurrence: recurrenceValue,
+      };
+
+      // If recurring, ask user how to apply the edit
+      if (selectedBill.isRecurring && viewMode !== 'monthly') {
+        setPendingEditData(editData);
+        setRecurringEditOpen(true);
+        return;
+      }
+
       await updateBill.mutateAsync({
         billId: selectedBill._id,
         monthId,
-        data: {
-          name: editName,
-          category: editCategory,
-          amount,
-          dueDate,
-          isRecurring: editIsRecurring,
-          recurrence: recurrenceValue,
-        },
+        data: editData,
       });
 
       setIsEditModalOpen(false);
       setSelectedBill(null);
+      toast.success('Bill updated successfully');
     } catch (error) {
       console.error('Error updating bill:', error);
-      alert('Failed to update bill');
+      toast.error('Failed to update bill');
+    }
+  };
+
+  const handleRecurringEditConfirm = async (action: 'this_period' | 'this_and_future') => {
+    if (!selectedBill || !pendingEditData) return;
+    try {
+      const periodKey = viewMode !== 'monthly'
+        ? buildPeriodKey(year, month, viewMode as Period)
+        : undefined;
+
+      await updateBill.mutateAsync({
+        billId: selectedBill._id,
+        monthId,
+        data: {
+          ...(pendingEditData as Record<string, unknown>),
+          recurringAction: action,
+          periodKey,
+        },
+      });
+
+      setRecurringEditOpen(false);
+      setIsEditModalOpen(false);
+      setSelectedBill(null);
+      setPendingEditData(null);
+      toast.success('Bill updated successfully');
+    } catch (error) {
+      console.error('Error updating recurring bill:', error);
+      toast.error('Failed to update bill');
     }
   };
 
@@ -167,7 +226,7 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
 
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount < 0) {
-      alert('Please enter a valid amount');
+      toast.error('Please enter a valid amount');
       return;
     }
 
@@ -181,19 +240,59 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
       setIsPaymentModalOpen(false);
       setSelectedBillForPayment(null);
       setPaymentAmount('');
+      toast.success('Payment recorded successfully');
     } catch (error) {
       console.error('Error recording payment:', error);
-      alert('Failed to record payment');
+      toast.error('Failed to record payment');
     }
   };
 
-  const handleDeleteBill = async (billId: string) => {
-    if (!confirm('Are you sure you want to delete this bill?')) return;
+  const handleDeleteBill = async (bill: Bill) => {
+    if (bill.isRecurring) {
+      setRecurringDeleteBill(bill);
+      setRecurringDeleteOpen(true);
+      return;
+    }
+    setConfirmBillId(bill._id);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmBillId) return;
+    setConfirmLoading(true);
     try {
-      await deleteBill.mutateAsync({ billId, monthId });
+      await deleteBill.mutateAsync({ billId: confirmBillId, monthId });
+      toast.success('Bill deleted');
     } catch (error) {
       console.error('Error deleting bill:', error);
-      alert('Failed to delete bill');
+      toast.error('Failed to delete bill');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmOpen(false);
+      setConfirmBillId(null);
+    }
+  };
+
+  const handleRecurringDeleteConfirm = async (action: 'this_period' | 'this_and_future') => {
+    if (!recurringDeleteBill) return;
+    try {
+      const periodKey = viewMode !== 'monthly'
+        ? buildPeriodKey(year, month, viewMode as Period)
+        : buildPeriodKey(year, month);
+
+      await deleteBill.mutateAsync({
+        billId: recurringDeleteBill._id,
+        monthId,
+        recurringAction: action,
+        periodKey,
+      });
+      toast.success('Bill deleted');
+    } catch (error) {
+      console.error('Error deleting recurring bill:', error);
+      toast.error('Failed to delete bill');
+    } finally {
+      setRecurringDeleteOpen(false);
+      setRecurringDeleteBill(null);
     }
   };
 
@@ -271,16 +370,19 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
             <h1 className="text-3xl font-semibold text-slate-800 mb-1">Bills Management</h1>
             <p className="text-slate-500 text-sm">Track and manage your bills across months</p>
           </div>
-          <Button 
-            variant="primary" 
-            onClick={() => setIsCreateModalOpen(true)} 
-            className="shadow-lg cursor-pointer"
-          >
+          <div className="flex items-center gap-3">
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            <Button 
+              variant="primary" 
+              onClick={() => setIsCreateModalOpen(true)} 
+              className="shadow-lg cursor-pointer"
+            >
             <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add New Bill
           </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -491,7 +593,7 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDeleteBill(bill._id)}
+                              onClick={() => handleDeleteBill(bill)}
                               className="text-rose-600 cursor-pointer hover:text-rose-700 hover:bg-rose-50"
                             >
                               <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -746,6 +848,31 @@ export function BillsView({ monthId, year, month }: BillsViewProps) {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setConfirmBillId(null); }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Bill"
+        message="Are you sure you want to delete this bill? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={confirmLoading}
+      />
+
+      <RecurringActionModal
+        isOpen={recurringDeleteOpen}
+        onClose={() => { setRecurringDeleteOpen(false); setRecurringDeleteBill(null); }}
+        onSelect={handleRecurringDeleteConfirm}
+        actionType="delete"
+      />
+
+      <RecurringActionModal
+        isOpen={recurringEditOpen}
+        onClose={() => { setRecurringEditOpen(false); setPendingEditData(null); }}
+        onSelect={handleRecurringEditConfirm}
+        actionType="edit"
+      />
     </div>
   );
 }

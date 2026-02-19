@@ -65,6 +65,9 @@ const BillSchema = new Schema<BillDocument>(
       type: [MonthlyBillPaymentSchema],
       default: [],
     },
+    stoppedFromPeriod: {
+      type: String,
+    },
   },
   {
     timestamps: true,

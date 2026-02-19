@@ -63,7 +63,7 @@ const DebtSchema = new Schema<DebtDocument>(
     paymentFrequency: {
       type: String,
       required: true,
-      enum: ['monthly', 'biweekly'],
+      enum: ['monthly', 'biweekly', 'per_period'],
       default: 'monthly',
     },
     paymentDueDate: {

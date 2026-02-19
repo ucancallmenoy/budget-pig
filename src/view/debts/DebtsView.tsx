@@ -8,6 +8,9 @@ import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
 import { CategoryBadge } from '@/components/shared/CategoryBadge';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import ViewModeToggle from '@/components/shared/ViewModeToggle';
+import { useToast } from '@/components/ui/Toast';
 import { useDebts } from '@/hooks/debts/queries/useDebts';
 import { useCreateDebt } from '@/hooks/debts/mutations/useCreateDebt';
 import { useUpdateDebt } from '@/hooks/debts/mutations/useUpdateDebt';
@@ -18,6 +21,7 @@ import { formatCurrency } from '@/utils/currency';
 import { formatDate } from '@/utils/date';
 import { DEBT_TYPES } from '@/utils/constants';
 import { calculatePaymentProgress, isPaymentOverdue, getDaysUntilPayment, getNextPaymentDate, getMonthPaymentStatus, getMonthPaymentAmount, getTotalPaidAllTime, getRemainingBalance } from '@/utils/debt';
+import { type ViewMode } from '@/utils/period';
 
 interface DebtsViewProps {
   monthId: string;
@@ -26,6 +30,8 @@ interface DebtsViewProps {
 }
 
 export function DebtsView({ monthId, year, month }: DebtsViewProps) {
+  const toast = useToast();
+  const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -38,6 +44,9 @@ export function DebtsView({ monthId, year, month }: DebtsViewProps) {
   const [editPaymentFrequency, setEditPaymentFrequency] = useState<PaymentFrequency>('monthly');
   const [editPaymentDueDate, setEditPaymentDueDate] = useState('1');
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmDebtId, setConfirmDebtId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const [createName, setCreateName] = useState('');
   const [createType, setCreateType] = useState<DebtType>('credit_card');
@@ -138,9 +147,25 @@ export function DebtsView({ monthId, year, month }: DebtsViewProps) {
     setPaymentAmount('');
   };
 
-  const handleDeleteDebt = async (debtId: string) => {
-    if (!confirm('Are you sure you want to delete this debt?')) return;
-    await deleteDebt.mutateAsync({ debtId });
+  const handleDeleteDebt = (debtId: string) => {
+    setConfirmDebtId(debtId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDebtId) return;
+    setConfirmLoading(true);
+    try {
+      await deleteDebt.mutateAsync({ debtId: confirmDebtId });
+      toast.success('Debt deleted');
+    } catch (error) {
+      console.error('Error deleting debt:', error);
+      toast.error('Failed to delete debt');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmOpen(false);
+      setConfirmDebtId(null);
+    }
   };
 
   const openEditModal = (debt: Debt) => {
@@ -214,12 +239,15 @@ export function DebtsView({ monthId, year, month }: DebtsViewProps) {
             <h1 className="text-3xl font-semibold text-slate-800 mb-1">Debts Management</h1>
             <p className="text-slate-500 text-sm">Track and manage your debts and payments</p>
           </div>
-          <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className="cursor-pointer">
-            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add New Debt
-          </Button>
+          <div className="flex items-center gap-3">
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className="cursor-pointer">
+              <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add New Debt
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
@@ -735,6 +763,17 @@ export function DebtsView({ monthId, year, month }: DebtsViewProps) {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setConfirmDebtId(null); }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Debt"
+        message="Are you sure you want to delete this debt? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={confirmLoading}
+      />
     </div>
   );
 }
