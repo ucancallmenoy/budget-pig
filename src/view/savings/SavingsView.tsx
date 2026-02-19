@@ -8,6 +8,8 @@ import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProgressRing } from '@/components/shared/ProgressRing';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { useToast } from '@/components/ui/Toast';
 import { useSavings } from '@/hooks/savings/queries/useSavings';
 import { useCreateSaving } from '@/hooks/savings/mutations/useCreateSaving';
 import { useUpdateSaving } from '@/hooks/savings/mutations/useUpdateSaving';
@@ -35,6 +37,7 @@ const SAVING_CATEGORIES = [
 ];
 
 export function SavingsView({ monthId, year, month }: SavingsViewProps) {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'all' | 'monthly' | 'long_term'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -42,6 +45,9 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
   const [selectedSaving, setSelectedSaving] = useState<Saving | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmSavingId, setConfirmSavingId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const [createName, setCreateName] = useState('');
   const [createTarget, setCreateTarget] = useState('');
@@ -113,10 +119,25 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
     setSelectedSaving(null);
   };
 
-  const handleDeleteSaving = async (savingId: string) => {
-    if (!confirm('Are you sure you want to delete this savings goal?')) return;
+  const handleDeleteSaving = (savingId: string) => {
+    setConfirmSavingId(savingId);
+    setConfirmOpen(true);
+  };
 
-    await deleteSaving.mutateAsync({ savingId, monthId });
+  const handleConfirmDelete = async () => {
+    if (!confirmSavingId) return;
+    setConfirmLoading(true);
+    try {
+      await deleteSaving.mutateAsync({ savingId: confirmSavingId, monthId });
+      toast.success('Savings goal deleted');
+    } catch (error) {
+      console.error('Error deleting saving:', error);
+      toast.error('Failed to delete savings goal');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmOpen(false);
+      setConfirmSavingId(null);
+    }
   };
 
   const handleAddContribution = async (amount: number, note: string) => {
@@ -622,6 +643,17 @@ export function SavingsView({ monthId, year, month }: SavingsViewProps) {
         saving={selectedSaving}
         onSubmit={handleAddContribution}
         isLoading={addContribution.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setConfirmSavingId(null); }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Savings Goal"
+        message="Are you sure you want to delete this savings goal? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={confirmLoading}
       />
     </div>
   );

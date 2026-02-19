@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const debtTypes = ['credit_card', 'student_loan', 'personal_loan', 'mortgage', 'car_loan', 'other'] as const;
-export const paymentFrequencies = ['monthly', 'biweekly'] as const;
+export const paymentFrequencies = ['monthly', 'biweekly', 'per_period'] as const;
 
 export const createDebtSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),

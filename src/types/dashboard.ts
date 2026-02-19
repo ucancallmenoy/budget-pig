@@ -1,7 +1,11 @@
+import type { CategoryVariance } from './budget';
+import type { ViewMode } from '@/utils/period';
+
 export interface MonthlyDashboard {
   monthId: string;
   year: number;
   month: number;
+  viewMode: ViewMode;
   totalIncome: number;
   bills: {
     total: number;
@@ -30,6 +34,13 @@ export interface MonthlyDashboard {
     remainingAfterSavings: number;
     savingsRate: number;
   };
+  forecast: {
+    periodEndRemaining: number;
+    monthEndRemaining: number;
+    dailyBurnRate: number;
+    runwayDays: number;
+  };
+  categoryVariance: CategoryVariance[];
 }
 
 export interface AnnualDashboard {
@@ -43,4 +54,30 @@ export interface AnnualDashboard {
     expenses: number;
     saved: number;
   }[];
+}
+
+export type MonthlyReportEntryType = 'budget' | 'bill' | 'debt';
+
+export interface MonthlyReportEntry {
+  id: string;
+  type: MonthlyReportEntryType;
+  title: string;
+  category?: string;
+  note?: string;
+  amount: number;
+  date: string;
+  period: 'P1' | 'P2';
+}
+
+export interface MonthlyReport {
+  monthId: string;
+  year: number;
+  month: number;
+  viewMode: ViewMode;
+  totals: {
+    income: number;
+    expenses: number;
+    net: number;
+  };
+  entries: MonthlyReportEntry[];
 }

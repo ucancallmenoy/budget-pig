@@ -6,7 +6,10 @@ import { QUERY_KEYS } from '@/utils/constants';
 interface UpdateBillParams {
   billId: string;
   monthId: string;
-  data: UpdateBillInput;
+  data: UpdateBillInput & {
+    recurringAction?: 'this_period' | 'this_and_future';
+    periodKey?: string;
+  };
 }
 
 export function useUpdateBill() {

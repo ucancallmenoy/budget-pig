@@ -6,7 +6,7 @@ export type DebtType =
   | 'car_loan'
   | 'other';
 
-export type PaymentFrequency = 'monthly' | 'biweekly';
+export type PaymentFrequency = 'monthly' | 'biweekly' | 'per_period';
 
 export interface MonthlyPayment {
   monthId: string;

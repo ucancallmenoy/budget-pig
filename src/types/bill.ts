@@ -25,6 +25,8 @@ export interface Bill {
   isRecurring: boolean;
   recurrence: BillRecurrence;
   monthlyPayments: MonthlyBillPayment[];
+  /** Period key for stopping recurrence ("this and future") */
+  stoppedFromPeriod?: string;
   createdAt: Date;
   updatedAt: Date;
 }
