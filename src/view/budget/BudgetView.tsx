@@ -179,11 +179,10 @@ export function BudgetView({ monthId, year, month }: BudgetViewProps) {
                   <tr className="border-b border-slate-200">
                     <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Date</th>
                     <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Source</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Type</th>
                     <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Period</th>
                     <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Note</th>
                     <th className="text-right py-3 px-4 font-semibold text-slate-700 text-sm">Amount</th>
-                    <th className="text-right py-3 px-4 font-semibold text-slate-700 text-sm">Actions</th>
+                    <th className="w-28 text-right py-3 px-4 font-semibold text-slate-700 text-sm">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -191,21 +190,22 @@ export function BudgetView({ monthId, year, month }: BudgetViewProps) {
                     <tr key={entry._id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-3 px-4 text-sm text-slate-700">{formatDate(entry.date)}</td>
                       <td className="py-3 px-4 text-sm font-medium text-slate-800">{entry.description}</td>
-                      <td className="py-3 px-4 text-sm text-slate-700 capitalize">{entry.category || 'other'}</td>
                       <td className="py-3 px-4 text-sm text-slate-700">{entry.period}</td>
                       <td className="py-3 px-4 text-sm text-slate-500">{entry.note || '-'}</td>
                       <td className="py-3 px-4 text-right text-sm font-semibold text-emerald-700">
                         {formatCurrency(entry.amount)}
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-rose-600 hover:bg-rose-50"
-                          onClick={() => setDeleteTargetId(entry._id)}
-                        >
-                          Delete
-                        </Button>
+                      <td className="w-28 py-3 px-4">
+                        <div className="flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-rose-600 hover:bg-rose-50"
+                            onClick={() => setDeleteTargetId(entry._id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
